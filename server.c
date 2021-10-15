@@ -50,3 +50,17 @@ void print_client_addr(struct sockaddr_in addr){
         (addr.sin_addr.s_addr & 0xff0000) >> 16,
         (addr.sin_addr.s_addr & 0xff000000) >> 24);
 }
+
+/* Add clients to queue */
+void queue_add(client_t *cl){
+	pthread_mutex_lock(&clients_mutex);
+
+	for(int i=0; i < MAX_CLIENTS; ++i){
+		if(!clients[i]){
+			clients[i] = cl;
+			break;
+		}
+	}
+
+	pthread_mutex_unlock(&clients_mutex);
+}
