@@ -147,3 +147,12 @@ void *handle_client(void *arg){
 		bzero(buff_out, BUFFER_SZ);
   }
 
+/* Delete client from queue and yield thread */
+	close(cli->sockfd);
+  queue_remove(cli->uid);
+  free(cli);
+  cli_count--;
+  pthread_detach(pthread_self());
+
+	return NULL;
+}
