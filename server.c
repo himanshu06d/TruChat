@@ -80,3 +80,21 @@ void queue_remove(int uid){
 
 	pthread_mutex_unlock(&clients_mutex);
 }
+
+/* Send message to all clients except sender */
+void send_message(char *s, int uid){
+	pthread_mutex_lock(&clients_mutex);
+
+	for(int i=0; i<MAX_CLIENTS; ++i){
+		if(clients[i]){
+			if(clients[i]->uid != uid){
+				if(write(clients[i]->sockfd, s, strlen(s)) < 0){
+					perror("ERROR: write to descriptor failed");
+					break;
+				}
+			}
+		}
+	}
+
+	pthread_mutex_unlock(&clients_mutex);
+}
