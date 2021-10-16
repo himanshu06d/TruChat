@@ -145,5 +145,5 @@ void *handle_client(void *arg){
 		}
 
 		bzero(buff_out, BUFFER_SZ);
-	}
+  }
 
