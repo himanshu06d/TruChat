@@ -199,5 +199,32 @@ int main(int argc, char **argv){
 
 	printf("=== WELCOME TO THE CHATROOM ===\n");
 
+	while(1){
+		socklen_t clilen = sizeof(cli_addr);
+		connfd = accept(listenfd, (struct sockaddr*)&cli_addr, &clilen);
+
+		/* Check if max clients is reached */
+		if((cli_count + 1) == MAX_CLIENTS){
+			printf("Max clients reached. Rejected: ");
+			print_client_addr(cli_addr);
+			printf(":%d\n", cli_addr.sin_port);
+			close(connfd);
+			continue;
+		}
+
+		/* Client settings */
+		client_t *cli = (client_t *)malloc(sizeof(client_t));
+		cli->address = cli_addr;
+		cli->sockfd = connfd;
+		cli->uid = uid++;
+
+		/* Add client to the queue and fork thread */
+		queue_add(cli);
+		pthread_create(&tid, NULL, &handle_client, (void*)cli);
+
+		/* Reduce CPU usage */
+		sleep(1);
+	}
+
 	return EXIT_SUCCESS;
 }
