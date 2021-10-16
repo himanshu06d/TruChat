@@ -176,4 +176,28 @@ int main(int argc, char **argv){
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = inet_addr(ip);
   serv_addr.sin_port = htons(port);
+
+  /* Ignore pipe signals */
+	signal(SIGPIPE, SIG_IGN);
+
+	if(setsockopt(listenfd, SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
+		perror("ERROR: setsockopt failed");
+    return EXIT_FAILURE;
+	}
+
+	/* Bind */
+  if(bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    perror("ERROR: Socket binding failed");
+    return EXIT_FAILURE;
+  }
+
+  /* Listen */
+  if (listen(listenfd, 10) < 0) {
+    perror("ERROR: Socket listening failed");
+    return EXIT_FAILURE;
+	}
+
+	printf("=== WELCOME TO THE CHATROOM ===\n");
+
+	return EXIT_SUCCESS;
 }
