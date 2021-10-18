@@ -8,17 +8,93 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sqlite3.h>
 
 #define LENGTH 2048
+
 
 // Global variables
 volatile sig_atomic_t flag = 0;
 int sockfd = 0;
 char name[32];
+int temp=0;
 
 void str_overwrite_stdout() {
   printf("%s", "> ");
   fflush(stdout);
+}
+
+
+static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
+   int i;
+   for(i = 0; i<argc; i++) {
+      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+   }
+   printf("\n");
+   return 0;
+}
+
+int insert_db(char *name, char *message)
+{
+  
+    sqlite3 *db;
+   char *zErrMsg = 0;
+   int rc;
+   char *sql;
+   /* Open database */
+   rc = sqlite3_open("test.db", &db);
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stderr, "Opened database successfully\n");
+   }
+   /* Create SQL statement */
+   asprintf(&sql, "INSERT INTO CHATTING (NAME,MESSAGE)" \
+      "VALUES ('%s', '%s');", name, message );
+	++temp;
+   /* Execute SQL statement */
+   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+   if( rc != SQLITE_OK ) {
+      fprintf(stderr, "SQL error: %s\n", zErrMsg);
+      sqlite3_free(zErrMsg);
+   } else {
+      fprintf(stdout, "Records created successfully\n");
+   }
+   sqlite3_close(db);
+   return 0;
+}
+
+int make_db()
+{
+    sqlite3 *db;
+   char *zErrMsg = 0;
+   int rc;
+   char *sql;
+   /* Open database */
+   rc = sqlite3_open("test.db", &db);
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stdout, "Opened database successfully\n");
+   }
+   /* Create SQL statement */
+   sql = "CREATE TABLE CHATTING(" \
+      "NAME TEXT NOT NULL," \
+      "MESSAGE TEXT NOT NULL);";
+   /* Execute SQL statement */
+   rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+   if( rc != SQLITE_OK ) {
+      fprintf(stderr, "SQL error: %s\n", zErrMsg);
+      sqlite3_free(zErrMsg);
+   } else {
+      fprintf(stdout, "Table created successfully\n");
+   }
+   sqlite3_close(db);
+   return 0;
 }
 
 void str_trim_lf (char* arr, int length) {
@@ -49,10 +125,13 @@ void send_msg_handler() {
     } else {
       sprintf(buffer, "%s: %s\n", name, message);
       send(sockfd, buffer, strlen(buffer), 0);
+      insert_db(name, message);
     }
 
 		bzero(message, LENGTH);
     bzero(buffer, LENGTH + 32);
+    
+    
   }
   catch_ctrl_c_and_exit(2);
 }
@@ -72,12 +151,13 @@ void recv_msg_handler() {
 		memset(message, 0, sizeof(message));
   }
 }
+
 int main(int argc, char **argv){
 	if(argc != 2){
 		printf("Usage: %s <port>\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-
+make_db();
 	char *ip = "127.0.0.1";
 	int port = atoi(argv[1]);
 
