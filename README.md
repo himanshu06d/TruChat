@@ -9,6 +9,7 @@ Minor 1 project
 2.  Compile server.c  ``` gcc -Wall -g3 -fsanitize=address -pthread server.c -o server ```
     Then compile client.c ```gcc -Wall -g3 -fsanitize=address -pthread client.c -l sqlite3 -o client```
 
+3. Install dependancy ``` sudo apt-get install libsqlite3-dev ```
 3. Open 3 terminals
 
     a) In first terminal ``` ./server 8888 ```
